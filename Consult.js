@@ -6,6 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -13,6 +16,29 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 export default function Consult() {
 
   const [search, setSearch] = useState('');
+
+  // ================= CHAT STATE =================
+
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+
+  const [message, setMessage] = useState('');
+
+  const [messages, setMessages] = useState([
+    {
+      id: '1',
+      text: 'สวัสดีครับ ยินดีให้คำปรึกษานะครับ 😊',
+      sender: 'doctor',
+      time: '12:30',
+    },
+    {
+      id: '2',
+      text: 'วันนี้มีเรื่องอะไรที่อยากปรึกษาเป็นพิเศษไหมครับ?',
+      sender: 'doctor',
+      time: '12:30',
+    },
+  ]);
+
+  // ================= DOCTORS =================
 
   const doctors = [
     {
@@ -50,6 +76,260 @@ export default function Consult() {
       .includes(search.toLowerCase())
   );
 
+  // ================= SEND MESSAGE =================
+
+  const sendMessage = () => {
+
+    if (message.trim() === '') {
+      return;
+    }
+
+    const newMessage = {
+      id: Date.now().toString(),
+      text: message.trim(),
+      sender: 'me',
+      time: new Date().toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    setMessage('');
+  };
+
+  // ============================================================
+  // CHAT SCREEN
+  // ============================================================
+
+  if (selectedDoctor) {
+
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={
+          Platform.OS === 'ios'
+            ? 'padding'
+            : undefined
+        }
+      >
+
+        {/* ================= CHAT HEADER ================= */}
+
+        <View style={styles.chatHeader}>
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              setSelectedDoctor(null);
+            }}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={25}
+              color="#263120"
+            />
+          </TouchableOpacity>
+
+          {/* Doctor Avatar */}
+
+          <View style={styles.chatAvatar}>
+
+            <MaterialCommunityIcons
+              name="doctor"
+              size={25}
+              color="#F7FCEF"
+            />
+
+            {selectedDoctor.online && (
+              <View style={styles.chatOnlineDot} />
+            )}
+
+          </View>
+
+          {/* Doctor Info */}
+
+          <View style={styles.chatDoctorInfo}>
+
+            <Text style={styles.chatDoctorName}>
+              {selectedDoctor.name}
+            </Text>
+
+            <View style={styles.chatStatusRow}>
+
+              <View
+                style={[
+                  styles.chatStatusDot,
+                  !selectedDoctor.online &&
+                    styles.chatOfflineDot,
+                ]}
+              />
+
+              <Text style={styles.chatStatusText}>
+                {selectedDoctor.online
+                  ? 'ออนไลน์'
+                  : 'ออฟไลน์'}
+              </Text>
+
+            </View>
+
+          </View>
+
+          {/* Phone */}
+
+          <TouchableOpacity style={styles.phoneButton}>
+
+            <MaterialCommunityIcons
+              name="phone-outline"
+              size={22}
+              color="#596B43"
+            />
+
+          </TouchableOpacity>
+
+        </View>
+
+        {/* ================= MESSAGES ================= */}
+
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.chatContent}
+
+          renderItem={({ item }) => {
+
+            const isMe = item.sender === 'me';
+
+            return (
+
+              <View
+                style={[
+                  styles.messageRow,
+                  isMe && styles.messageRowMe,
+                ]}
+              >
+
+                {/* Doctor Avatar */}
+
+                {!isMe && (
+
+                  <View style={styles.smallAvatar}>
+
+                    <MaterialCommunityIcons
+                      name="doctor"
+                      size={17}
+                      color="#F7FCEF"
+                    />
+
+                  </View>
+
+                )}
+
+                {/* Message Bubble */}
+
+                <View
+                  style={[
+                    styles.messageBubble,
+
+                    isMe
+                      ? styles.myMessage
+                      : styles.doctorMessage,
+                  ]}
+                >
+
+                  <Text
+                    style={[
+                      styles.messageText,
+
+                      isMe &&
+                        styles.myMessageText,
+                    ]}
+                  >
+                    {item.text}
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.messageTime,
+
+                      isMe &&
+                        styles.myMessageTime,
+                    ]}
+                  >
+                    {item.time}
+                  </Text>
+
+                </View>
+
+              </View>
+            );
+          }}
+        />
+
+        {/* ================= MESSAGE INPUT ================= */}
+
+        <View style={styles.inputArea}>
+
+          {/* Plus */}
+
+          <TouchableOpacity style={styles.attachButton}>
+
+            <MaterialCommunityIcons
+              name="plus"
+              size={25}
+              color="#596B43"
+            />
+
+          </TouchableOpacity>
+
+          {/* Input */}
+
+          <View style={styles.inputBox}>
+
+            <TextInput
+              value={message}
+              onChangeText={setMessage}
+              placeholder="พิมพ์ข้อความ..."
+              placeholderTextColor="#999"
+              style={styles.textInput}
+              multiline
+            />
+
+          </View>
+
+          {/* Send */}
+
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+
+              message.trim() === '' &&
+                styles.sendButtonDisabled,
+            ]}
+            onPress={sendMessage}
+            disabled={message.trim() === ''}
+          >
+
+            <MaterialCommunityIcons
+              name="send"
+              size={20}
+              color="#FFFFFF"
+            />
+
+          </TouchableOpacity>
+
+        </View>
+
+      </KeyboardAvoidingView>
+    );
+  }
+
+  // ============================================================
+  // CONSULT SCREEN
+  // ============================================================
+
   return (
     <View style={styles.container}>
 
@@ -58,6 +338,7 @@ export default function Consult() {
       <View style={styles.header}>
 
         <View>
+
           <Text style={styles.headerTitle}>
             ปรึกษาผู้เชี่ยวชาญ
           </Text>
@@ -65,14 +346,17 @@ export default function Consult() {
           <Text style={styles.headerSubtitle}>
             ขอคำแนะนำจากผู้เชี่ยวชาญด้านสุขภาพ
           </Text>
+
         </View>
 
         <View style={styles.headerIcon}>
+
           <MaterialCommunityIcons
             name="doctor"
             size={27}
             color="#596B43"
           />
+
         </View>
 
       </View>
@@ -82,7 +366,7 @@ export default function Consult() {
         contentContainerStyle={styles.content}
       >
 
-        {/* ================= INTRO CARD ================= */}
+        {/* ================= INTRO ================= */}
 
         <View style={styles.introCard}>
 
@@ -147,7 +431,7 @@ export default function Consult() {
 
         </View>
 
-        {/* ================= QUICK CATEGORY ================= */}
+        {/* ================= CATEGORY ================= */}
 
         <Text style={styles.sectionTitle}>
           เลือกหัวข้อที่ต้องการปรึกษา
@@ -362,6 +646,32 @@ export default function Consult() {
                 !doctor.online &&
                   styles.consultButtonOffline,
               ]}
+
+              onPress={() => {
+
+                if (doctor.online) {
+
+                  setSelectedDoctor(doctor);
+
+                  // เริ่มแชตใหม่กับผู้เชี่ยวชาญ
+                  setMessages([
+                    {
+                      id: '1',
+                      text: 'สวัสดีครับ ยินดีให้คำปรึกษานะครับ 😊',
+                      sender: 'doctor',
+                      time: '12:30',
+                    },
+                    {
+                      id: '2',
+                      text: 'วันนี้มีเรื่องอะไรที่อยากปรึกษาเป็นพิเศษไหมครับ?',
+                      sender: 'doctor',
+                      time: '12:30',
+                    },
+                  ]);
+
+                }
+
+              }}
             >
 
               <MaterialCommunityIcons
@@ -436,15 +746,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7FCEF',
   },
 
-  /* ================= HEADER ================= */
+  /* ==========================================================
+     CONSULT HEADER
+  ========================================================== */
 
   header: {
     backgroundColor: '#AEC18D',
-
     paddingHorizontal: 18,
     paddingTop: 17,
     paddingBottom: 16,
-
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -465,48 +775,41 @@ const styles = StyleSheet.create({
   headerIcon: {
     width: 45,
     height: 45,
-
     borderRadius: 23,
-
     backgroundColor: '#DCE7C6',
-
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  /* ================= CONTENT ================= */
+  /* ==========================================================
+     CONTENT
+  ========================================================== */
 
   content: {
     paddingHorizontal: 12,
     paddingTop: 13,
   },
 
-  /* ================= INTRO ================= */
+  /* ==========================================================
+     INTRO
+  ========================================================== */
 
   introCard: {
     backgroundColor: '#E6EFD6',
-
     borderRadius: 15,
-
     padding: 15,
-
     flexDirection: 'row',
     alignItems: 'center',
-
     marginBottom: 13,
   },
 
   introIcon: {
     width: 51,
     height: 51,
-
     borderRadius: 26,
-
     backgroundColor: '#F7FCEF',
-
     justifyContent: 'center',
     alignItems: 'center',
-
     marginRight: 12,
   },
 
@@ -523,92 +826,73 @@ const styles = StyleSheet.create({
   introDescription: {
     fontSize: 11,
     lineHeight: 17,
-
     color: '#59614E',
-
     marginTop: 3,
   },
 
-  /* ================= SEARCH ================= */
+  /* ==========================================================
+     SEARCH
+  ========================================================== */
 
   searchBox: {
     height: 46,
-
     backgroundColor: '#FFFFFF',
-
     borderRadius: 23,
-
     borderWidth: 1,
     borderColor: '#DCE2D2',
-
     flexDirection: 'row',
     alignItems: 'center',
-
     paddingHorizontal: 15,
-
     marginBottom: 18,
   },
 
   searchInput: {
     flex: 1,
-
     height: 44,
-
     fontSize: 13,
     color: '#222',
-
     marginLeft: 8,
   },
 
-  /* ================= SECTION ================= */
+  /* ==========================================================
+     SECTION
+  ========================================================== */
 
   sectionTitle: {
     fontSize: 16,
-
     fontWeight: '900',
-
     color: '#222',
-
     marginBottom: 10,
   },
 
-  /* ================= CATEGORY ================= */
+  /* ==========================================================
+     CATEGORY
+  ========================================================== */
 
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-
     justifyContent: 'space-between',
-
     marginBottom: 19,
   },
 
   categoryCard: {
     width: '48.5%',
-
     backgroundColor: '#FFFFFF',
-
     borderRadius: 13,
-
     borderWidth: 1,
     borderColor: '#E0E5D6',
-
     padding: 12,
-
     marginBottom: 9,
   },
 
   categoryIcon: {
     width: 40,
     height: 40,
-
     borderRadius: 20,
-
     backgroundColor: '#E8F0DB',
-
     alignItems: 'center',
     justifyContent: 'center',
-
     marginBottom: 8,
   },
 
@@ -621,13 +905,13 @@ const styles = StyleSheet.create({
   categorySubtitle: {
     fontSize: 9,
     color: '#888',
-
     marginTop: 3,
-
     lineHeight: 13,
   },
 
-  /* ================= DOCTORS ================= */
+  /* ==========================================================
+     DOCTORS
+  ========================================================== */
 
   doctorHeader: {
     flexDirection: 'row',
@@ -638,20 +922,15 @@ const styles = StyleSheet.create({
   doctorCount: {
     fontSize: 11,
     color: '#7A8965',
-
     marginBottom: 10,
   },
 
   doctorCard: {
     backgroundColor: '#FFFFFF',
-
     borderRadius: 15,
-
     borderWidth: 1,
     borderColor: '#E0E5D6',
-
     padding: 14,
-
     marginBottom: 10,
   },
 
@@ -662,44 +941,33 @@ const styles = StyleSheet.create({
   doctorAvatar: {
     width: 55,
     height: 55,
-
     borderRadius: 28,
-
     backgroundColor: '#7F9564',
-
     alignItems: 'center',
     justifyContent: 'center',
-
     position: 'relative',
   },
 
   onlineDot: {
     position: 'absolute',
-
     right: 0,
     bottom: 1,
-
     width: 14,
     height: 14,
-
     borderRadius: 7,
-
     backgroundColor: '#45B96B',
-
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
 
   doctorInfo: {
     flex: 1,
-
     marginLeft: 11,
   },
 
   doctorNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-
     marginBottom: 3,
   },
 
@@ -712,61 +980,44 @@ const styles = StyleSheet.create({
   onlineBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-
     backgroundColor: '#E4F5E8',
-
     borderRadius: 10,
-
     paddingHorizontal: 6,
     paddingVertical: 3,
-
     marginLeft: 6,
   },
 
   smallOnlineDot: {
     width: 6,
     height: 6,
-
     borderRadius: 3,
-
     backgroundColor: '#45B96B',
-
     marginRight: 4,
   },
 
   onlineText: {
     fontSize: 8,
     fontWeight: '800',
-
     color: '#399052',
   },
 
   specialty: {
     fontSize: 10,
-
     color: '#555',
-
     lineHeight: 15,
   },
 
   hospital: {
     fontSize: 9,
-
     color: '#888',
-
     marginTop: 2,
   },
 
-  /* ================= DETAILS ================= */
-
   doctorDetails: {
     flexDirection: 'row',
-
     marginTop: 12,
     marginBottom: 11,
-
     paddingTop: 10,
-
     borderTopWidth: 1,
     borderTopColor: '#EDF0E9',
   },
@@ -774,47 +1025,38 @@ const styles = StyleSheet.create({
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-
     marginRight: 18,
   },
 
   detailText: {
     fontSize: 9,
-
     color: '#777',
-
     marginLeft: 5,
   },
 
-  /* ================= BUTTON ================= */
+  /* ==========================================================
+     CONSULT BUTTON
+  ========================================================== */
 
   consultButton: {
     height: 42,
-
     borderRadius: 21,
-
     backgroundColor: '#8DA66D',
-
     flexDirection: 'row',
-
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   consultButtonOffline: {
     backgroundColor: '#E8EEDC',
-
     borderWidth: 1,
     borderColor: '#B8C7A2',
   },
 
   consultButtonText: {
     fontSize: 12,
-
     fontWeight: '900',
-
     color: '#FFFFFF',
-
     marginLeft: 6,
   },
 
@@ -822,48 +1064,251 @@ const styles = StyleSheet.create({
     color: '#596B43',
   },
 
-  /* ================= SECURITY ================= */
+  /* ==========================================================
+     SECURITY
+  ========================================================== */
 
   securityCard: {
     backgroundColor: '#EDF3E5',
-
     borderRadius: 13,
-
     padding: 13,
-
     flexDirection: 'row',
-
     alignItems: 'flex-start',
-
     marginTop: 5,
   },
 
   securityText: {
     flex: 1,
-
     marginLeft: 9,
   },
 
   securityTitle: {
     fontSize: 12,
-
     fontWeight: '900',
-
     color: '#596B43',
   },
 
   securityDescription: {
     fontSize: 9,
-
     lineHeight: 14,
-
     color: '#727A68',
-
     marginTop: 3,
   },
 
   bottomSpace: {
     height: 25,
+  },
+
+  /* ==========================================================
+     CHAT HEADER
+  ========================================================== */
+
+  chatHeader: {
+    height: 75,
+    backgroundColor: '#AEC18D',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#D6DEC8',
+  },
+
+  backButton: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 3,
+  },
+
+  chatAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#7F9564',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  chatOnlineDot: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    backgroundColor: '#45B96B',
+    borderWidth: 2,
+    borderColor: '#AEC18D',
+  },
+
+  chatDoctorInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
+  chatDoctorName: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#263120',
+  },
+
+  chatStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+  },
+
+  chatStatusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#45B96B',
+    marginRight: 5,
+  },
+
+  chatOfflineDot: {
+    backgroundColor: '#999',
+  },
+
+  chatStatusText: {
+    fontSize: 10,
+    color: '#596B43',
+  },
+
+  phoneButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#DCE7C6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* ==========================================================
+     CHAT
+  ========================================================== */
+
+  chatContent: {
+    paddingHorizontal: 12,
+    paddingTop: 18,
+    paddingBottom: 15,
+  },
+
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 10,
+  },
+
+  messageRowMe: {
+    justifyContent: 'flex-end',
+  },
+
+  smallAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#7F9564',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 7,
+  },
+
+  messageBubble: {
+    maxWidth: '75%',
+    paddingHorizontal: 13,
+    paddingTop: 9,
+    paddingBottom: 7,
+    borderRadius: 17,
+  },
+
+  doctorMessage: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E0E5D6',
+    borderBottomLeftRadius: 5,
+  },
+
+  myMessage: {
+    backgroundColor: '#8DA66D',
+    borderBottomRightRadius: 5,
+  },
+
+  messageText: {
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 19,
+  },
+
+  myMessageText: {
+    color: '#FFFFFF',
+  },
+
+  messageTime: {
+    fontSize: 8,
+    color: '#999',
+    marginTop: 3,
+    textAlign: 'right',
+  },
+
+  myMessageTime: {
+    color: '#E7EFD9',
+  },
+
+  /* ==========================================================
+     MESSAGE INPUT
+  ========================================================== */
+
+  inputArea: {
+    minHeight: 65,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E1E5DC',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+
+  attachButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  inputBox: {
+    flex: 1,
+    minHeight: 43,
+    maxHeight: 100,
+    backgroundColor: '#F2F5ED',
+    borderRadius: 22,
+    paddingHorizontal: 15,
+    justifyContent: 'center',
+  },
+
+  textInput: {
+    fontSize: 13,
+    color: '#333',
+    paddingTop: 9,
+    paddingBottom: 9,
+  },
+
+  sendButton: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    backgroundColor: '#8DA66D',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 7,
+  },
+
+  sendButtonDisabled: {
+    backgroundColor: '#C8D1BB',
   },
 
 });

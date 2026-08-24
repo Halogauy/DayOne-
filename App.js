@@ -1,79 +1,70 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-// Import หน้าจอต่าง ๆ
-import StartScreen from './Screens/StartScreen';
-import LoginScreen from './Screens/LoginScreen';
-import HomeScreen from './Screens/HomeScreen';
-import SearchScreen from './Screens/Consult';
-import NotificationsScreen from './Screens/NotificationsScreen';
-import ProfileScreen from './Screens/ProfileScreen';
+// Import หน้าจอจากโฟลเดอร์ frontend
+import StartScreen from './frontend/StartScreen';
+import LoginScreen from './frontend/LoginScreen';
+import ForgotPasswordScreen from './frontend/ForgotPasswordScreen';
+import HomeScreen from './frontend/HomeScreen';
+import TrickScreen from './frontend/TrickScreen';
+import ConsultScreen from './frontend/ConsultScreen';
+import ChatScreen from './frontend/ChatScreen';
+import CommunityScreen from './frontend/CommunityScreen';
+import ProfileScreen from './frontend/ProfileScreen';
+import AccountScreen from './frontend/AccountScreen';
 
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// ----- ส่วนของ Bottom Tab (หน้าหลังจาก Login แล้ว) -----
-function MainTabs() {
+// เมนูด้านล่าง (Bottom Tab Navigation)
+function MainTabNavigator() {
   return (
-    <NavigationContainer independent={true}>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size }) => {
-            let iconName;
-
-            if (route.name === 'Home') {
-              iconName = 'home';                    // 🏠 บ้าน
-            } else if (route.name === 'Search') {
-              iconName = 'chatbubbles-outline';     // 💬 แชท
-            } else if (route.name === 'Notifications') {
-              iconName = 'document-text-outline';   // 📄 บันทึก
-            } else if (route.name === 'Profile') {
-              iconName = 'person-circle-outline';   // 👤 โปรไฟล์
-            }
-
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: '#2C402E',   // สีไอคอน/ตัวอักษรเมื่อเลือก (เขียวเข้ม)
-          tabBarInactiveTintColor: '#5C6D46', // สีไอคอน/ตัวอักษรเมื่อไม่ได้เลือก
-          tabBarStyle: {
-            backgroundColor: '#C5D6A4',       // พื้นหลังแท็บบาร์สีเขียว
-            borderTopWidth: 0,
-            height: 60,
-            paddingBottom: 6,
-            paddingTop: 6,
-          },
-          tabBarShowLabel: false,             // ซ่อนตัวอักษร แสดงแค่ไอคอน เหมือนภาพ
-          headerShown: false,
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Search" component={SearchScreen} />
-        <Tab.Screen name="Notifications" component={NotificationsScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: '#7CB342', // สีเขียวหลักของ Day One
+        tabBarInactiveTintColor: '#888888',
+        tabBarStyle: { height: 60, paddingBottom: 8, backgroundColor: '#E8F5E9' },
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          if (route.name === 'HomeTab') iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === 'ConsultTab') iconName = focused ? 'medical' : 'medical-outline';
+          else if (route.name === 'CommunityTab') iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          else if (route.name === 'ProfileTab') iconName = focused ? 'person' : 'person-outline';
+          
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'หน้าแรก' }} />
+      <Tab.Screen name="ConsultTab" component={ConsultScreen} options={{ title: 'ปรึกษา' }} />
+      <Tab.Screen name="CommunityTab" component={CommunityScreen} options={{ title: 'ชุมชน' }} />
+      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'โปรไฟล์' }} />
+    </Tab.Navigator>
   );
 }
 
-// ----- App หลัก: สลับหน้าด้วย State (ไม่ใช้ Stack Navigator) -----
+// ระบบจัดการเปลี่ยนหน้าทั้งหมดในแอป (Stack Navigation)
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState('Start');
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Start" screenOptions={{ headerShown: false }}>
+        {/* กลุ่มหน้ายืนยันตัวตน */}
+        <Stack.Screen name="Start" component={StartScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        
+        {/* กลุ่มหน้าหลัก (ที่มี Bottom Tabด้านล่าง) */}
+        <Stack.Screen name="Main" component={MainTabNavigator} />
 
-  const navigation = {
-    navigate: (screenName) => setCurrentScreen(screenName),
-  };
-
-  switch (currentScreen) {
-    case 'Start':
-      return <StartScreen navigation={navigation} />;
-    case 'Login':
-      return <LoginScreen navigation={navigation} />;
-    case 'ForgotPassword':
-      return <LoginScreen navigation={navigation} />;
-    case 'Main':
-      return <MainTabs />;
-    default:
-      return <StartScreen navigation={navigation} />;
-  }
+        {/* หน้าจออื่น ๆ ที่เรียกจากในแอป */}
+        <Stack.Screen name="Trick" component={TrickScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="Account" component={AccountScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
 }
